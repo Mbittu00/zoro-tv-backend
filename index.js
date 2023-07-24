@@ -6,127 +6,102 @@ let app = express();
 app.use(express.json());
 app.use(cors());
 
-// let episodes='https://aniwatch.to/ajax/v2/episode/list/18056'
-// app.get("/:id",async(req,res)=>{
-//   let {id}=req.params.id
-// let {data}=await axios.get(episodes,{
-//   headers:{
-//     "Content-Type":"text/html"
-//   }
-// })
-// let $=cheerio.load(data.html)
-// let list=$('.ep-item')
-//
-// let episodeIds=[]
-//
-// list.map((e,i)=>{
-//   let epId=$(i).attr('data-id')
-//   let ep=$(i).find('.ssli-order').text()
-//   let title=$(i).find('.ep-name').text()
-//   episodeIds.push({epId,ep,title})
-//
-// })
-// //console.log(list.length)
-// episodeIds.map(async(e,i)=>{
-//   let {data}=await axios.get(
-//   `https://aniwatch.to/ajax/v2/episode/servers?episodeId=${e.epId}`
-//     ,{
-//   headers:{
-//     "Content-Type":"text/html"
-//   }
-// })
-// let car=cheerio.load(data.html)
-// //console.log(data.html)
-// let dub=car('.servers-dub').find('.ps__-list').find('.item')
-// if(dub.length>0){
-//   dub.map((p,i)=>{
-//     let ser=car(i).attr('data-id')
-//     let serverId=car(i).attr('data-server-id')
-// let newServer=episodeIds.find((n)=>n.epId===e.epId)
-// if(!newServer.serverId){
-//  episodeIds.filter((n)=>n.epId===e.epId)[0].serverId=ser
-//  //console.log(episodeIds)
-// }else{}
-//   })
-// }else{
-// console.log('no')
-// }
-// console.log('\n')
-// })
-//
-// setTimeout(() => {
-//   res.send(episodeIds)
-// }, 1500)
-// })
+// let episodes = "https://animension.to/public-api/episodes.php?id=2272291555";
+// let episode = "https://animension.to/public-api/episode.php?id=1116803836";
+// let name='https://animension.to/1731135993'
+/*app.get("/:id", async (req, res) => {
+  let { id } = req.params;
+  let first=[
+    `https://animension.to/public-api/episodes.php?id=${id}`,
+    `https://animension.to/${id}`
+    ]
+  try{
+    let {data}=await axios.get(
+  `https://animension.to/public-api/episodes.php?id=${id}`
+    ,{
+  headers:{
+    "Content-Type":"text/html"
+  }
+})
+    let name=await axios.get(
+  `https://animension.to/${id}`
+    ,{
+  headers:{
+    "Content-Type":"text/html"
+  }
+})
+let $=cheerio.load(name.data)
+let title=$('.entry-title').text()
+let pro=await Promise.all(
+  data.map(async(e)=>{
+    let {data}=await axios.get(
+  `https://animension.to/public-api/episode.php?id=${e[1]}`
+    ,{
+  headers:{
+    "Content-Type":"text/html"
+  }
+});
+let vidLink=JSON.parse(data[3])
+return {ep:data[4],link:vidLink['VidCDN-embed']}
+  })
+  )
+res.send(pro)
+  }catch(e){
+    res.status(500).send(e)
+  }
+});*/
 
 app.get("/:id", async (req, res) => {
   let { id } = req.params;
-  console.log(typeof id)
-  let { data } = await axios.get(
-    `https://aniwatch.to/ajax/v2/episode/list/${id}`
-    ,{
-    headers: {
-      "Content-Type": "text/html",
-    },
-  });
-  let $ = cheerio.load(data.html);
-  let list = $(".ep-item");
-  
-  let pro=await Promise.all(
-    list.map(async(e,i)=>{
-    let epId=$(i).attr('data-id')
-    let ep=$(i).find('.ssli-order').text()
-    let title=$(i).find('.ep-name').text()
-    let serverId;
-    let link;
-    let type;
-let {data}=await axios.get(
-  `https://aniwatch.to/ajax/v2/episode/servers?episodeId=${epId}`
+  let title;
+  let episodes;
+ // let epLink="https://animension.to/public-api/episodes.php?id=",id
+ // let titleLink="https://animension.to/",id
+  let first=[
+    {
+    uri:`https://animension.to/${id}`,
+    type:'title'
+    },{
+    uri:`https://animension.to/public-api/episodes.php?id=${id}`,
+    type:'ep'
+    },]
+  first.map(async(e)=>{
+    if(e.type==='ep'){
+      let {data}=await axios.get(
+  `https://animension.to/public-api/episodes.php?id=${id}`
     ,{
   headers:{
     "Content-Type":"text/html"
   }
 })
-let server=cheerio.load(data.html)
-let dub=server('.servers-dub').find('.ps__-list').find('.item')
-let sub=server('.servers-sub').find('.ps__-list').find('.item')
-if(dub.length>0){
-  type='dub'
-  dub.map((p,c)=>{
-    if(!serverId){
-      serverId=server(c).attr('data-id')
+      let pro=await Promise.all(
+  data.map(async(e)=>{
+    let ep=await axios.get(
+  `https://animension.to/public-api/episode.php?id=${e[1]}`
+    ,{
+  headers:{
+    "Content-Type":"text/html"
+  }
+});
+let vidLink=JSON.parse(ep.data[3])
+return {ep:ep.data[4],link:vidLink['VidCDN-embed'],title}
+  })
+  )
+res.send(pro)
+    }else{
+      let {data}=await axios.get(
+  `https://animension.to/${id}`
+    ,{
+  headers:{
+    "Content-Type":"text/html"
+  }
+})
+let $=cheerio.load(data)
+title=$('.entry-title').text()
     }
   })
-  
-  let {data}=await axios.get(
-  `https://aniwatch.to/ajax/v2/episode/sources?id=${serverId}`
-    ,{
-  headers:{
-    "Content-Type":"text/html"
-  }
-})
-link=data.link
-}else{
-  type='sub'
-    sub.map((p,c)=>{
-    if(!serverId){
-      serverId=server(c).attr('data-id')
-    }
-  })
-  
-  let {data}=await axios.get(
-  `https://aniwatch.to/ajax/v2/episode/sources?id=${serverId}`
-    ,{
-  headers:{
-    "Content-Type":"text/html"
-  }
-})
-link=data.link
-}
 
-return {epId,ep,title,serverId,link,type}
-    }))
-    res.send(pro)
+ // res.send(episodes)
 });
 
 app.listen(8080, console.log(8080));
